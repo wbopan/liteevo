@@ -3,12 +3,13 @@
   "title": "Random Number Generation Strategy", // playbook title
   "description": "", // A brief sentence describe what the playbook does
   "sections": { // Must be a dict<str, list<str>>
-    "workflow": [ // Step-by-step workflow, never exceed 3 points
-      "1. A sentence here",
+    "workflow": [ 
+      "1. A step here",
     ],
-    "note": [ // keep it brief, never exceed 3 points 
+    "note": [
       "1. Any note",
     ],
+    "anything-you-want": []
   },
   "logs": [ // The update logs of the playbook, each line sit within 30 words.
     "v0: (any problem identified) v1: (solution)",
