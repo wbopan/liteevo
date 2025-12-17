@@ -104,19 +104,19 @@ def load_criteria_from_glob(pattern: str) -> list[str]:
 @click.option(
     "--prompt-update-playbook",
     type=click.Path(exists=True),
-    default="data/prompts/UPDATE_PLAYBOOK.jinja2",
+    default="prompts/UPDATE_PLAYBOOK.jinja2",
     help="Path to playbook update prompt template.",
 )
 @click.option(
     "--prompt-generate-answer",
     type=click.Path(exists=True),
-    default="data/prompts/GENERATE_ANSWER.jinja2",
+    default="prompts/GENERATE_ANSWER.jinja2",
     help="Path to generation prompt template.",
 )
 @click.option(
     "--schema-playbook",
     type=click.Path(exists=True),
-    default="data/prompts/PLAYBOOK_SCHEMA.txt",
+    default="prompts/PLAYBOOK_SCHEMA.txt",
     help="Path to playbook schema file.",
 )
 def main(
