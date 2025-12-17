@@ -5,8 +5,7 @@ from pathlib import Path
 
 import click
 
-from .evolve import EvolutionConfig, run_evolution
-from .generate import load_template
+from .evolve import EvolutionConfig, load_template, run_evolution
 from .providers import CLIProvider, ClaudeCodeProvider
 
 
@@ -52,10 +51,10 @@ def load_criteria_from_glob(pattern: str) -> list[str]:
     help="The model provider to use.",
 )
 @click.option(
-    "--provider-cli-cmd",
+    "--provider-args",
     type=str,
     default=None,
-    help="CLI command for custom provider (required if provider=cli).",
+    help="Arguments for the provider (required if provider=cli).",
 )
 @click.option(
     "--task",
@@ -108,24 +107,24 @@ def load_criteria_from_glob(pattern: str) -> list[str]:
 @click.option(
     "--prompt-update-playbook",
     type=click.Path(exists=True),
-    default="data/prompts/UPDATE_PLAYBOOK.txt",
+    default="data/prompts/UPDATE_PLAYBOOK.jinja2",
     help="Path to playbook update prompt template.",
 )
 @click.option(
     "--prompt-generate-answer",
     type=click.Path(exists=True),
-    default="data/prompts/GENERATE_ANSWER.txt",
+    default="data/prompts/GENERATE_ANSWER.jinja2",
     help="Path to generation prompt template.",
 )
 @click.option(
     "--schema-playbook",
     type=click.Path(exists=True),
-    default="data/playbooks/PLAYBOOK_SCHEMA.txt",
+    default="data/prompts/PLAYBOOK_SCHEMA.txt",
     help="Path to playbook schema file.",
 )
 def main(
     provider: str,
-    provider_cli_cmd: str | None,
+    provider_args: str | None,
     task: str | None,
     tasks: str | None,
     criterion: str | None,
@@ -144,8 +143,8 @@ def main(
     reflect on failures, and update guidance.
     """
     # Validate provider options
-    if provider == "cli" and not provider_cli_cmd:
-        raise click.UsageError("--provider-cli-cmd is required when provider=cli")
+    if provider == "cli" and not provider_args:
+        raise click.UsageError("--provider-args is required when provider=cli")
 
     # Validate task/tasks options
     if task is None and tasks is None:
@@ -185,7 +184,7 @@ def main(
     if provider == "claude":
         llm_provider = ClaudeCodeProvider()
     else:
-        llm_provider = CLIProvider(provider_cli_cmd)  # type: ignore
+        llm_provider = CLIProvider(provider_args)  # type: ignore
 
     # Create output directories
     playbooks_path = Path(playbooks_dir)

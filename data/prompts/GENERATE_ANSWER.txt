@@ -1,7 +1,0 @@
-<PLAYBOOK>
-{{ playbook }}
-</PLAYBOOK>
-
-<TASK>
-{{ task }}
-</TASK>

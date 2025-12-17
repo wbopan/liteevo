@@ -1,3 +1,7 @@
+{%- set playbook_latest_version = playbooks | length - 1 -%}
+{%- set batch_start = [0, step_id - config.batch_size + 1] | max -%}
+{%- set batch_end = step_id + 1 -%}
+{%- set actual_batch_size = batch_end - batch_start -%}
 You are a playbook editor to update playbook to improve AI's response and actions given following challenge tasks.
 
 Current playbook version: v{{ playbook_latest_version }}
@@ -10,21 +14,22 @@ Lastest playbook:
 
 </LATEST_PLAYBOOK>
 
-Equipped with above playbook, here are {{ batch_size }} sample(s) of AI responses to tasks with correponding success criteria:
+Equipped with above playbook, here are {{ actual_batch_size }} sample(s) of AI responses to tasks with correponding success criteria:
 
-{% for i in range(batch_size) %}
+{% for gen_idx in range(batch_start, batch_end) %}
+{%- set task_idx = gen_idx % (tasks | length) -%}
 
-<TASK_INPUT_{{ i }}>
-{{ tasks[i] }}
-</TASK_INPUT_{{ i }}>
+<TASK_INPUT_{{ loop.index0 }}>
+{{ tasks[task_idx] }}
+</TASK_INPUT_{{ loop.index0 }}>
 
-<AI_GENERATION_{{ i }}>
-{{ generations[i] }}
-</AI_GENERATION_{{ i }}>
+<AI_GENERATION_{{ loop.index0 }}>
+{{ generations[gen_idx] }}
+</AI_GENERATION_{{ loop.index0 }}>
 
-<SUCCESS_CRITERION_{{ i }}>
-{{ criteria[i] }}
-</SUCCESS_CRITERION_{{ i }}>
+<SUCCESS_CRITERION_{{ loop.index0 }}>
+{{ criteria[task_idx] }}
+</SUCCESS_CRITERION_{{ loop.index0 }}>
 
 {% endfor %}
 
