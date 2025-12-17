@@ -70,6 +70,47 @@ class ClaudeCodeProvider(Provider):
         return result.stdout
 
 
+class GeminiProvider(Provider):
+    """Provider that uses Gemini CLI for generation."""
+
+    def __init__(self, args: str | None = None):
+        """Initialize the Gemini provider.
+
+        Args:
+            args: Optional arguments to pass to gemini command.
+        """
+        self.args = args
+
+    def generate(self, prompt: str) -> str:
+        """Generate a response using Gemini CLI.
+
+        Args:
+            prompt: The input prompt to send to Gemini.
+
+        Returns:
+            The generated response text.
+
+        Raises:
+            RuntimeError: If the Gemini CLI command fails.
+        """
+        cmd = ["gemini"]
+        if self.args:
+            cmd.extend(self.args.split())
+        cmd.append(prompt)
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"Gemini CLI failed with code {result.returncode}: {result.stderr}"
+            )
+
+        return result.stdout
+
+
 class CLIProvider(Provider):
     """Provider that uses a custom CLI command for generation."""
 
@@ -116,7 +157,7 @@ def create_provider(name: str, args: str | None = None) -> Provider:
     """Create a provider instance by name.
 
     Args:
-        name: Provider name ("claude" or "cli").
+        name: Provider name ("claude", "gemini", or "cli").
         args: Provider-specific arguments.
 
     Returns:
@@ -127,6 +168,8 @@ def create_provider(name: str, args: str | None = None) -> Provider:
     """
     if name == "claude":
         return ClaudeCodeProvider(args)
+    elif name == "gemini":
+        return GeminiProvider(args)
     elif name == "cli":
         return CLIProvider(args)
     else:
