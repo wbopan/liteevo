@@ -49,7 +49,7 @@ def load_criteria_from_glob(pattern: str) -> list[str]:
 @click.command()
 @click.option(
     "--provider",
-    type=click.Choice(["claude", "gemini", "cli"]),
+    type=click.Choice(["claude", "codex", "gemini", "openai", "cli"]),
     required=True,
     help="The model provider to use.",
 )
