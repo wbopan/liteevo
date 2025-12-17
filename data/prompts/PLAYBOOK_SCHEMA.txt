@@ -3,18 +3,19 @@
   "title": "Random Number Generation Strategy", // playbook 的标题
   "description": "", // A brief sentence describe what the playbook does
   "sections": { // Must be a dict<str, list<str>>
-    // You are only allowed to edit or create field names in this dict
-    // Here are some good start points
-    "guidelines": [ // General tips
+    "guidelines": [ // General tips, never exceed 6 points
       "1. A sentence here",
     ],
-    "workflow": [ // Step-by-step workflow
+    "workflow": [ // Step-by-step workflo, never exceed 6 pointsw
       "1. Any step",
     ],
-    "checklist": [ // Checklist items to ensure good performance
+    "checklist": [ // Checklist items to ensure good performanc, never exceed 6 pointse
     ],
-    "examples": [ // Helpful, brief examples
-    ],
-    "any_new_section_you_want": []
+    "examples": [ // Helpful, brief example, never exceed 6 pointss
+    ] // no custom field name is allowed
   },
+  "logs": [ // The update logs of the playbook
+    "v0: (any problem identified) v1: (solution)",
+    "v1: ..."
+  ]
 }
