@@ -90,7 +90,7 @@ def update_playbook(
     criteria: list[str],
     playbooks: list[str],
     step_id: int,
-) -> str:
+) -> tuple[str, str]:
     """Update the playbook based on task results.
 
     Args:
@@ -103,7 +103,7 @@ def update_playbook(
         step_id: Current step (0-indexed).
 
     Returns:
-        The updated playbook as a string.
+        A tuple of (extracted_playbook, full_response).
 
     Raises:
         RuntimeError: If playbook extraction fails after max retries.
@@ -121,7 +121,7 @@ def update_playbook(
                 playbooks=playbooks,
                 step_id=step_id,
             )
-            return extract_playbook_from_response(response)
+            return extract_playbook_from_response(response), response
         except (ValueError, RuntimeError) as e:
             last_error = e
             print(f"  Retry {attempt + 1}/{config.max_retries}: {e}")
@@ -228,7 +228,7 @@ def run_evolution(
             batch_size = batch_count if batch_count > 0 else config.batch_size
             print(f"  Updating playbook (batch {num_batches}, {batch_size} samples)")
 
-            new_playbook = update_playbook(
+            new_playbook, full_response = update_playbook(
                 provider=provider,
                 config=config,
                 tasks=tasks,
@@ -243,6 +243,12 @@ def run_evolution(
             playbook_path = config.playbooks_dir / f"playbook_v{new_version}.txt"
             save_playbook(new_playbook, playbook_path)
             print(f"  Saved playbook v{new_version} to {playbook_path}")
+
+            # Save full generation from playbook update
+            update_gen_path = config.generations_dir / f"v{new_version}_playbook.txt"
+            with open(update_gen_path, "w", encoding="utf-8") as f:
+                f.write(full_response)
+            print(f"  Saved playbook update generation to {update_gen_path}")
 
             playbooks.append(new_playbook)
 

@@ -8,6 +8,15 @@ class Provider(ABC):
     """Abstract base class for LLM providers."""
 
     @abstractmethod
+    def __init__(self, args: str | None = None):
+        """Initialize the provider.
+
+        Args:
+            args: Provider-specific arguments.
+        """
+        pass
+
+    @abstractmethod
     def generate(self, prompt: str) -> str:
         """Generate a response for the given prompt.
 
@@ -23,6 +32,14 @@ class Provider(ABC):
 class ClaudeCodeProvider(Provider):
     """Provider that uses Claude Code CLI for generation."""
 
+    def __init__(self, args: str | None = None):
+        """Initialize the Claude Code provider.
+
+        Args:
+            args: Optional arguments to pass before -p flag.
+        """
+        self.args = args
+
     def generate(self, prompt: str) -> str:
         """Generate a response using Claude Code CLI.
 
@@ -35,8 +52,12 @@ class ClaudeCodeProvider(Provider):
         Raises:
             RuntimeError: If the Claude CLI command fails.
         """
+        cmd = ["claude"]
+        if self.args:
+            cmd.extend(self.args.split())
+        cmd.extend(["-p", prompt])
         result = subprocess.run(
-            ["claude", prompt, "-p"],
+            cmd,
             capture_output=True,
             text=True,
         )
@@ -52,13 +73,15 @@ class ClaudeCodeProvider(Provider):
 class CLIProvider(Provider):
     """Provider that uses a custom CLI command for generation."""
 
-    def __init__(self, command: str):
+    def __init__(self, args: str | None = None):
         """Initialize the CLI provider.
 
         Args:
-            command: The CLI command to use for generation.
+            args: The CLI command to use for generation (required).
         """
-        self.command = command
+        if not args:
+            raise ValueError("args is required for CLIProvider")
+        self.args = args
 
     def generate(self, prompt: str) -> str:
         """Generate a response using the configured CLI command.
@@ -75,7 +98,7 @@ class CLIProvider(Provider):
             RuntimeError: If the CLI command fails.
         """
         result = subprocess.run(
-            [self.command, prompt],
+            [self.args, prompt],
             capture_output=True,
             text=True,
             shell=False,
@@ -83,7 +106,7 @@ class CLIProvider(Provider):
 
         if result.returncode != 0:
             raise RuntimeError(
-                f"CLI command '{self.command}' failed with code {result.returncode}: {result.stderr}"
+                f"CLI command '{self.args}' failed with code {result.returncode}: {result.stderr}"
             )
 
         return result.stdout
@@ -94,19 +117,17 @@ def create_provider(name: str, args: str | None = None) -> Provider:
 
     Args:
         name: Provider name ("claude" or "cli").
-        args: Provider arguments (required for "cli").
+        args: Provider-specific arguments.
 
     Returns:
         The provider instance.
 
     Raises:
-        ValueError: If provider name is unknown or args missing for cli.
+        ValueError: If provider name is unknown or required args missing.
     """
     if name == "claude":
-        return ClaudeCodeProvider()
+        return ClaudeCodeProvider(args)
     elif name == "cli":
-        if not args:
-            raise ValueError("args is required for cli provider")
         return CLIProvider(args)
     else:
         raise ValueError(f"Unknown provider: {name}")
