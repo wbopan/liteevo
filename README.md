@@ -6,11 +6,11 @@ Use **Self-Evolution Finetuning** to supercharge your LLM with only 1 prompt!
 
 ## The Problem and What is LiteEvo?
 
-- LLM Agents are powerful but sometime still need some explicit learning to solve unfamiliar problems. However finetuning and prompt engineering is expensive and time-consuming. **Self-Evolution** is an easy and powerful way to let LLM teach itself and evolve to be better at your tasks.
+- LLM Agents are powerful but sometimes still need explicit learning to solve unfamiliar problems. However, finetuning and prompt engineering are expensive and time-consuming. **Self-Evolution** is an easy and powerful way to let an LLM teach itself and evolve to be better at your tasks.
 
-- **LiteEvo is easy-to-use tool to self-evolution tuning your models**. Instead of tuning model weights, it lets the model repeatly attempt at your task and **evolve a playbook(skill)** — a structured guidance document that captures successful strategies, common pitfalls, and learned heuristics.
+- **LiteEvo is an easy-to-use tool for self-evolution tuning of your models**. Instead of tuning model weights, it lets the model repeatedly attempt your task and **evolve a playbook (skill)** — a structured guidance document that captures successful strategies, common pitfalls, and learned heuristics.
 
-- LiteEvo Self-Evolution only requires an **agent (claude code, codex or any LLM), 1~10 tasks and <10 minutes** to finetune a playbook boosting LLM agent performance!
+- LiteEvo Self-Evolution only requires an **agent (Claude Code, Codex, or any LLM), 1–10 tasks, and <10 minutes** to finetune a playbook that boosts LLM agent performance!
 
 - Over iterations, the playbook accumulates distilled knowledge that dramatically improves task performance — without changing a single model parameter.
 
@@ -19,11 +19,11 @@ Use **Self-Evolution Finetuning** to supercharge your LLM with only 1 prompt!
 
 ## One-minute Quickstart with LiteEvo
 
-**Prequistes:**
+**Prerequisites:**
 
 - Python package manager `uv` to run the evolution.
-- A working LLM Agents. This can be any cli agent (supporting `claude`, `codex` and `gemini-cli`) or OpenAI-compatible API.
-- A specific task you wish the LLM to be good at, with a criterion on what kind of output is expected.
+- A working LLM agent. This can be any CLI agent (supporting `claude`, `codex`, and `gemini-cli`) or an OpenAI-compatible API.
+- A specific task you want the LLM to be good at, with a criterion for what kind of output is expected.
 
 ```bash
 # Install
@@ -251,7 +251,7 @@ Use glob patterns to load multiple tasks and criteria:
 uv run evolve --provider openai \
   --provider-args "model=gpt-4" \
   --tasks "examples/ascii_digit/tasks/*.txt" \
-  --criteria "examples/ascii_digit/*.txt" \
+  --criteria "examples/ascii_digit/criteria/*.txt" \
   --step-size 30 --batch-size 5
 ```
 
