@@ -1,15 +1,31 @@
 [project]
-name = "liteevolve"
+name = "liteevo"
 version = "0.1.0"
-description = "A lightweight self-evolution training framework for LLMs"
+description = "A lightweight self-evolution framework that improves LLM task performance through iterative playbook refinement"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12"
+keywords = ["llm", "self-evolution", "prompt-tuning", "playbook", "ai", "machine-learning"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "jinja2>=3.1.0",
     "click>=8.0.0",
     "rich>=13.0.0",
     "openai>=1.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/wbopan/liteevo"
+Repository = "https://github.com/wbopan/liteevo"
+Issues = "https://github.com/wbopan/liteevo/issues"
 
 [project.scripts]
 evolve = "liteevolve.cli:main"
