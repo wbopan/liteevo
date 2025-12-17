@@ -235,10 +235,10 @@ def run_evolution(
                 new_version = len(playbooks)
                 playbook_path = config.playbooks_dir / f"playbook_v{new_version}.txt"
                 save_playbook(new_playbook, playbook_path)
-                progress.console.print(f"[green]✓ {_rel(playbook_path)}[/]")
-
-                update_gen_path = config.generations_dir / f"v{new_version}_playbook.txt"
+                update_gen_path = config.generations_dir / f"playbook_v{new_version}.txt"
                 update_gen_path.write_text(full_response, encoding="utf-8")
+                progress.console.print(f"[green]✓ {_rel(update_gen_path)}[/]")
+
 
                 playbooks.append(new_playbook)
 
