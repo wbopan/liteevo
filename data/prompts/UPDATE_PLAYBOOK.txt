@@ -1,0 +1,41 @@
+You are a playbook editor to update playbook to improve AI's response and actions given following challenge tasks.
+
+Current playbook version: v{{ playbook_latest_version }}
+
+Lastest playbook:
+
+<LATEST_PLAYBOOK>
+
+{{ playbooks[playbook_latest_version] }}
+
+</LATEST_PLAYBOOK>
+
+Equipped with above playbook, here are {{ batch_size }} sample(s) of AI responses to tasks with correponding success criteria:
+
+{% for i in range(batch_size) %}
+
+<TASK_INPUT_{{ i }}>
+{{ tasks[i] }}
+</TASK_INPUT_{{ i }}>
+
+<AI_GENERATION_{{ i }}>
+{{ generations[i] }}
+</AI_GENERATION_{{ i }}>
+
+<SUCCESS_CRITERION_{{ i }}>
+{{ criteria[i] }}
+</SUCCESS_CRITERION_{{ i }}>
+
+{% endfor %}
+
+The initial playbook schema is:
+
+<PLAYBOOK_SCHEMA>
+
+{{ playbooks[0] }}
+
+</PLAYBOOK_SCHEMA>
+
+Investigate each task generation separately or consider them as a whole, indentify any generation that does not meet the criterion. If there exists any failing cases, reason about why AI fails given the latest playbook. Then, based on the playbook schema, think about how to update/iterate/revise/prune the playbook.
+
+Finally print the new playbook in a code area starts with ```json and set the "playbook_version" to {{ playbook_latest_version + 1 }}.
