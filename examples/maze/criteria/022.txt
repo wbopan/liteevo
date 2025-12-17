@@ -1,0 +1,1 @@
+the path should be DDRDRRRD (length: 8 steps)

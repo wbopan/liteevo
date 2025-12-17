@@ -150,6 +150,6 @@ def generate_tasks(output_dir: str, num_tasks: int = 30):
 if __name__ == "__main__":
     import sys
 
-    output_dir = sys.argv[1] if len(sys.argv) > 1 else "."
+    output_dir = sys.argv[1] if len(sys.argv) > 1 else "data/"
     generate_tasks(output_dir)
     print(f"\nGenerated 30 tasks in {output_dir}/tasks/ and {output_dir}/criteria/")
