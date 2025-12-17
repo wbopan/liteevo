@@ -2,7 +2,7 @@
 {%- set batch_start = [0, step_id - config.batch_size + 1] | max -%}
 {%- set batch_end = step_id + 1 -%}
 {%- set actual_batch_size = batch_end - batch_start -%}
-You are a playbook editor to update playbook to improve AI's response and actions given following challenge tasks.
+You are a playbook editor to update playbook to enhance AI's response and actions given following challenge tasks.
 
 Current playbook version: v{{ playbook_latest_version }}
 
