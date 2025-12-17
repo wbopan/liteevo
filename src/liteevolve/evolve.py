@@ -6,7 +6,7 @@ from pathlib import Path
 
 from jinja2 import Template
 
-from .providers.base import Provider
+from .provider import Provider
 
 
 def load_template(path: Path | str) -> Template:

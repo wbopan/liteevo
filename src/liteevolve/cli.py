@@ -6,7 +6,7 @@ from pathlib import Path
 import click
 
 from .evolve import EvolutionConfig, load_template, run_evolution
-from .providers import CLIProvider, ClaudeCodeProvider
+from .provider import create_provider
 
 
 def load_tasks_from_glob(pattern: str) -> list[str]:
@@ -181,10 +181,7 @@ def main(
         )
 
     # Create provider
-    if provider == "claude":
-        llm_provider = ClaudeCodeProvider()
-    else:
-        llm_provider = CLIProvider(provider_args)  # type: ignore
+    llm_provider = create_provider(provider, provider_args)
 
     # Create output directories
     playbooks_path = Path(playbooks_dir)
