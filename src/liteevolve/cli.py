@@ -1,9 +1,12 @@
 """Command-line interface for LiteEvolve."""
 
+from datetime import datetime
 from glob import glob
 from pathlib import Path
 
 import click
+from rich import print
+from rich.panel import Panel
 
 from .evolve import EvolutionConfig, load_template, run_evolution
 from .provider import create_provider
@@ -46,7 +49,7 @@ def load_criteria_from_glob(pattern: str) -> list[str]:
 @click.command()
 @click.option(
     "--provider",
-    type=click.Choice(["claude", "cli"]),
+    type=click.Choice(["claude", "gemini", "cli"]),
     required=True,
     help="The model provider to use.",
 )
@@ -81,16 +84,10 @@ def load_criteria_from_glob(pattern: str) -> list[str]:
     help="Glob pattern for criteria files.",
 )
 @click.option(
-    "--playbooks-dir",
+    "--output-dir",
     type=click.Path(),
-    default="data/playbooks/",
-    help="Output directory for playbooks.",
-)
-@click.option(
-    "--generations-dir",
-    type=click.Path(),
-    default="data/generations/",
-    help="Output directory for generations.",
+    default=None,
+    help="Output directory (defaults to outputs/YYYY-MM-DD-HHMMSS/).",
 )
 @click.option(
     "--step-size",
@@ -129,8 +126,7 @@ def main(
     tasks: str | None,
     criterion: str | None,
     criteria: str | None,
-    playbooks_dir: str,
-    generations_dir: str,
+    output_dir: str | None,
     step_size: int,
     batch_size: int,
     prompt_update_playbook: str,
@@ -184,8 +180,11 @@ def main(
     llm_provider = create_provider(provider, provider_args)
 
     # Create output directories
-    playbooks_path = Path(playbooks_dir)
-    generations_path = Path(generations_dir)
+    if output_dir is None:
+        output_dir = f"outputs/{datetime.now().strftime('%Y-%m-%d-%H%M%S')}"
+    output_path = Path(output_dir)
+    playbooks_path = output_path / "playbooks"
+    generations_path = output_path / "generations"
     playbooks_path.mkdir(parents=True, exist_ok=True)
     generations_path.mkdir(parents=True, exist_ok=True)
 
@@ -206,6 +205,21 @@ def main(
         update_template=update_template,
     )
 
+    # Print config
+    num_batches = (step_size + batch_size - 1) // batch_size
+    config_text = "\n".join([
+        f"provider:        {provider}" + (f" ({provider_args})" if provider_args else ""),
+        f"tasks:           {len(task_list)}",
+        f"steps:           {step_size}",
+        f"batch_size:      {batch_size}",
+        f"num_batches:     {num_batches}",
+        f"output:          {output_dir}",
+        f"gen_template:    {prompt_generate_answer}",
+        f"update_template: {prompt_update_playbook}",
+        f"schema:          {schema_playbook}",
+    ])
+    print(Panel(config_text, title="✨ LiteEvolve 🧬", border_style="dim"))
+
     # Run evolution
     _ = run_evolution(
         provider=llm_provider,
@@ -216,10 +230,8 @@ def main(
     )
 
     # Print final result
-    # Calculate final version: number of batches = ceil(step_size / batch_size)
-    num_batches = (step_size + batch_size - 1) // batch_size
     final_path = playbooks_path / f"playbook_v{num_batches}.txt"
-    print(f"\nEvolution complete. Final playbook saved to: {final_path}")
+    print(f"\nDone. Final playbook: {final_path}")
 
 
 if __name__ == "__main__":

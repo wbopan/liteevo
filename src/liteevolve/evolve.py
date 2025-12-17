@@ -5,6 +5,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from jinja2 import Template
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
 
 from .provider import Provider
 
@@ -124,34 +133,11 @@ def update_playbook(
             return extract_playbook_from_response(response), response
         except (ValueError, RuntimeError) as e:
             last_error = e
-            print(f"  Retry {attempt + 1}/{config.max_retries}: {e}")
+            print(f"Retry {attempt + 1}/{config.max_retries}: {e}")
 
     raise RuntimeError(
         f"Failed to extract playbook after {config.max_retries} attempts: {last_error}"
     )
-
-
-def save_generation(
-    generation: str,
-    step: int,
-    task_id: int,
-    playbook_version: int,
-    generations_dir: Path,
-) -> None:
-    """Save a generation to disk.
-
-    Args:
-        generation: The generated text.
-        step: Current step number.
-        task_id: The task ID.
-        playbook_version: The playbook version used.
-        generations_dir: Directory to save generations.
-    """
-    generations_dir.mkdir(parents=True, exist_ok=True)
-    filename = f"{step:03d}_task{task_id:03d}_v{playbook_version}.txt"
-    path = generations_dir / filename
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(generation)
 
 
 def save_playbook(playbook: str, path: Path) -> None:
@@ -159,6 +145,14 @@ def save_playbook(playbook: str, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write(playbook)
+
+
+def _rel(path: Path) -> str:
+    """Get relative path from cwd."""
+    try:
+        return str(path.relative_to(Path.cwd()))
+    except ValueError:
+        return str(path)
 
 
 def run_evolution(
@@ -180,56 +174,30 @@ def run_evolution(
     Returns:
         The final evolved playbook as a string.
     """
-    # Initialize
     playbooks = [initial_playbook]
     all_generations: list[str] = []
     num_batches = 0
 
-    print(f"Starting evolution: {config.step_size} steps, batch size {config.batch_size}")
-    print(f"Tasks: {len(tasks)}, Criteria: {len(criteria)}")
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+        TextColumn("ETA"),
+        TimeRemainingColumn(),
+        TextColumn("{task.fields[status]}"),
+    ) as progress:
+        task = progress.add_task("Evolution", total=config.step_size, status="")
 
-    for step in range(config.step_size):
-        task_idx = step % len(tasks)
-        current_version = len(playbooks) - 1
+        for step in range(config.step_size):
+            task_idx = step % len(tasks)
+            current_version = len(playbooks) - 1
+            progress.update(task, status=f"task={task_idx} v{current_version}")
 
-        print(f"Step {step + 1}/{config.step_size} (task {task_idx})")
-
-        # Generate response for this task
-        generation = generate_with_template(
-            provider=provider,
-            template=config.generate_template,
-            config=config,
-            tasks=tasks,
-            generations=all_generations,
-            criteria=criteria,
-            playbooks=playbooks,
-            step_id=step,
-        )
-
-        # Save generation
-        save_generation(
-            generation=generation,
-            step=step,
-            task_id=task_idx,
-            playbook_version=current_version,
-            generations_dir=config.generations_dir,
-        )
-
-        # Add to all generations
-        all_generations.append(generation)
-
-        # Update playbook when batch is full or at final step
-        batch_count = len(all_generations) % config.batch_size
-        is_batch_full = batch_count == 0
-        is_final_step = step == config.step_size - 1
-
-        if is_batch_full or is_final_step:
-            num_batches += 1
-            batch_size = batch_count if batch_count > 0 else config.batch_size
-            print(f"  Updating playbook (batch {num_batches}, {batch_size} samples)")
-
-            new_playbook, full_response = update_playbook(
+            generation = generate_with_template(
                 provider=provider,
+                template=config.generate_template,
                 config=config,
                 tasks=tasks,
                 generations=all_generations,
@@ -238,18 +206,42 @@ def run_evolution(
                 step_id=step,
             )
 
-            # Save new playbook
-            new_version = len(playbooks)
-            playbook_path = config.playbooks_dir / f"playbook_v{new_version}.txt"
-            save_playbook(new_playbook, playbook_path)
-            print(f"  Saved playbook v{new_version} to {playbook_path}")
+            gen_path = config.generations_dir / f"{step:03d}_task{task_idx:03d}_v{current_version}.txt"
+            gen_path.parent.mkdir(parents=True, exist_ok=True)
+            gen_path.write_text(generation, encoding="utf-8")
+            progress.console.print(f"[dim]\\[step={step:03d}/{config.step_size:03d}, task={task_idx}, playbook=v{current_version}] → {_rel(gen_path)}[/]")
 
-            # Save full generation from playbook update
-            update_gen_path = config.generations_dir / f"v{new_version}_playbook.txt"
-            with open(update_gen_path, "w", encoding="utf-8") as f:
-                f.write(full_response)
-            print(f"  Saved playbook update generation to {update_gen_path}")
+            all_generations.append(generation)
 
-            playbooks.append(new_playbook)
+            batch_count = len(all_generations) % config.batch_size
+            is_batch_full = batch_count == 0
+            is_final_step = step == config.step_size - 1
+
+            if is_batch_full or is_final_step:
+                num_batches += 1
+                batch_size = batch_count if batch_count > 0 else config.batch_size
+                progress.console.print(f"[cyan]Updating playbook (batch {num_batches}, {batch_size} samples)...[/]")
+
+                new_playbook, full_response = update_playbook(
+                    provider=provider,
+                    config=config,
+                    tasks=tasks,
+                    generations=all_generations,
+                    criteria=criteria,
+                    playbooks=playbooks,
+                    step_id=step,
+                )
+
+                new_version = len(playbooks)
+                playbook_path = config.playbooks_dir / f"playbook_v{new_version}.txt"
+                save_playbook(new_playbook, playbook_path)
+                progress.console.print(f"[green]✓ {_rel(playbook_path)}[/]")
+
+                update_gen_path = config.generations_dir / f"v{new_version}_playbook.txt"
+                update_gen_path.write_text(full_response, encoding="utf-8")
+
+                playbooks.append(new_playbook)
+
+            progress.advance(task)
 
     return playbooks[-1]
