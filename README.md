@@ -2,6 +2,12 @@
 
 <img src="images/liteevo-banner.png" alt="LiteEvolve Banner" width="100%">
 
+<p align="center">
+  <a href="https://github.com/wbopan/liteevo"><img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python 3.12+"></a>
+  <a href="https://github.com/wbopan/liteevo/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT"></a>
+  <a href="https://github.com/wbopan/liteevo/stargazers"><img src="https://img.shields.io/github/stars/wbopan/liteevo?style=social" alt="GitHub Stars"></a>
+</p>
+
 Use **Self-Evolution Finetuning** to supercharge your LLM with only 1 prompt!
 
 ## The Problem and What is LiteEvo?
