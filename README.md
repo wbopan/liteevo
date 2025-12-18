@@ -46,6 +46,8 @@ uv run evolve \
 
 Watch as the model discovers that it needs actual randomization strategies instead of picking "random-looking" numbers like 37 and 42!
 
+<img src="images/task_comparison.jpg" alt="LiteEvolve Task Comparison" width="100%">
+
 ## How It Works
 
 ### Core Concepts
