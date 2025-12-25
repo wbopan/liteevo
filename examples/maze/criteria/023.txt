@@ -1,1 +1,1 @@
-the path should be DDDRRRRD (length: 8 steps)
+DDDRRRRD (length: 8 steps)

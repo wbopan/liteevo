@@ -40,6 +40,7 @@ class EvolutionConfig:
     batch_size: int
     playbooks_dir: Path
     generations_dir: Path
+    inputs_dir: Path
     generate_template: Template
     update_template: Template
     max_retries: int = 5
@@ -54,7 +55,7 @@ def generate_with_template(
     criteria: list[str],
     playbooks: list[str],
     step_id: int,
-) -> str:
+) -> tuple[str, str]:
     """Render template with fixed context and generate response.
 
     Args:
@@ -68,7 +69,7 @@ def generate_with_template(
         step_id: Current step (0-indexed).
 
     Returns:
-        The generated response text.
+        A tuple of (response, prompt).
     """
     prompt = template.render(
         config=config,
@@ -81,7 +82,7 @@ def generate_with_template(
         current_criterion=criteria[step_id % len(criteria)],
         current_playbook=playbooks[-1],
     )
-    return provider.generate(prompt)
+    return provider.generate(prompt), prompt
 
 
 def extract_playbook_from_response(text: str) -> str:
@@ -99,7 +100,7 @@ def update_playbook(
     criteria: list[str],
     playbooks: list[str],
     step_id: int,
-) -> tuple[str, str]:
+) -> tuple[str, str, str]:
     """Update the playbook based on task results.
 
     Args:
@@ -112,7 +113,7 @@ def update_playbook(
         step_id: Current step (0-indexed).
 
     Returns:
-        A tuple of (extracted_playbook, full_response).
+        A tuple of (extracted_playbook, full_response, prompt).
 
     Raises:
         RuntimeError: If playbook extraction fails after max retries.
@@ -120,7 +121,7 @@ def update_playbook(
     last_error = None
     for attempt in range(config.max_retries):
         try:
-            response = generate_with_template(
+            response, prompt = generate_with_template(
                 provider=provider,
                 template=config.update_template,
                 config=config,
@@ -130,7 +131,7 @@ def update_playbook(
                 playbooks=playbooks,
                 step_id=step_id,
             )
-            return extract_playbook_from_response(response), response
+            return extract_playbook_from_response(response), response, prompt
         except (ValueError, RuntimeError) as e:
             last_error = e
             print(f"Retry {attempt + 1}/{config.max_retries}: {e}")
@@ -195,7 +196,7 @@ def run_evolution(
             current_version = len(playbooks) - 1
             progress.update(task, status=f"task={task_idx} v{current_version}")
 
-            generation = generate_with_template(
+            generation, gen_prompt = generate_with_template(
                 provider=provider,
                 template=config.generate_template,
                 config=config,
@@ -206,9 +207,14 @@ def run_evolution(
                 step_id=step,
             )
 
+            # Save generation output
             gen_path = config.generations_dir / f"{step:03d}_task{task_idx:03d}_v{current_version}.txt"
             gen_path.parent.mkdir(parents=True, exist_ok=True)
             gen_path.write_text(generation, encoding="utf-8")
+
+            # Save generation prompt
+            input_path = config.inputs_dir / f"{step:03d}_task{task_idx:03d}_v{current_version}.txt"
+            input_path.write_text(gen_prompt, encoding="utf-8")
             progress.console.print(f"[dim]\\[step={step:03d}/{config.step_size:03d}, task={task_idx}, playbook=v{current_version}] → {_rel(gen_path)}[/]")
 
             all_generations.append(generation)
@@ -222,7 +228,7 @@ def run_evolution(
                 batch_size = batch_count if batch_count > 0 else config.batch_size
                 progress.console.print(f"[cyan]Updating playbook (batch {num_batches}, {batch_size} samples)...[/]")
 
-                new_playbook, full_response = update_playbook(
+                new_playbook, full_response, update_prompt = update_playbook(
                     provider=provider,
                     config=config,
                     tasks=tasks,
@@ -237,6 +243,9 @@ def run_evolution(
                 save_playbook(new_playbook, playbook_path)
                 update_gen_path = config.generations_dir / f"playbook_v{new_version}.txt"
                 update_gen_path.write_text(full_response, encoding="utf-8")
+                # Save update prompt
+                update_input_path = config.inputs_dir / f"playbook_v{new_version}.txt"
+                update_input_path.write_text(update_prompt, encoding="utf-8")
                 progress.console.print(f"[green]✓ {_rel(update_gen_path)}[/]")
 
 

@@ -1,10 +1,10 @@
 """Command-line interface for LiteEvolve."""
 
 from datetime import datetime
-from glob import glob
 from pathlib import Path
 
 import click
+from jinja2 import Template
 from rich import print
 from rich.panel import Panel
 
@@ -12,38 +12,37 @@ from .evolve import EvolutionConfig, load_template, run_evolution
 from .provider import create_provider
 
 
-def load_tasks_from_glob(pattern: str) -> list[str]:
-    """Load task contents from files matching a glob pattern.
+def load_from_directory(dir_path: str) -> list[str]:
+    """Load content from files in a directory.
+
+    If template.jinja2 exists, render it for each file with content=file_text.
+    Otherwise, return file contents directly.
 
     Args:
-        pattern: Glob pattern to match task files.
+        dir_path: Path to directory containing files.
 
     Returns:
-        List of task contents, sorted by filename.
+        List of contents (or rendered templates), sorted by filename.
     """
-    files = sorted(glob(pattern))
-    tasks = []
-    for filepath in files:
-        with open(filepath, "r", encoding="utf-8") as f:
-            tasks.append(f.read())
-    return tasks
+    directory = Path(dir_path)
+    template_path = directory / "template.jinja2"
 
+    # Get all files, excluding .jinja2 files
+    files = sorted(
+        f for f in directory.iterdir()
+        if f.is_file() and not f.suffix == ".jinja2"
+    )
 
-def load_criteria_from_glob(pattern: str) -> list[str]:
-    """Load criteria contents from files matching a glob pattern.
-
-    Args:
-        pattern: Glob pattern to match criteria files.
-
-    Returns:
-        List of criteria contents, sorted by filename.
-    """
-    files = sorted(glob(pattern))
-    criteria = []
-    for filepath in files:
-        with open(filepath, "r", encoding="utf-8") as f:
-            criteria.append(f.read())
-    return criteria
+    if template_path.exists():
+        # Render template for each file
+        template = Template(template_path.read_text(encoding="utf-8"))
+        return [
+            template.render(content=f.read_text(encoding="utf-8"))
+            for f in files
+        ]
+    else:
+        # Return file contents directly
+        return [f.read_text(encoding="utf-8") for f in files]
 
 
 @click.command()
@@ -66,10 +65,10 @@ def load_criteria_from_glob(pattern: str) -> list[str]:
     help="Single task input string.",
 )
 @click.option(
-    "--tasks",
-    type=str,
+    "--task-dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
     default=None,
-    help="Glob pattern for task input files.",
+    help="Directory containing task files.",
 )
 @click.option(
     "--criterion",
@@ -78,16 +77,22 @@ def load_criteria_from_glob(pattern: str) -> list[str]:
     help="Single criterion string.",
 )
 @click.option(
-    "--criteria",
-    type=str,
+    "--criterion-dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
     default=None,
-    help="Glob pattern for criteria files.",
+    help="Directory containing criterion files.",
 )
 @click.option(
     "--output-dir",
     type=click.Path(),
     default=None,
     help="Output directory (defaults to outputs/YYYY-MM-DD-HHMMSS/).",
+)
+@click.option(
+    "--name",
+    type=str,
+    default=None,
+    help="Run name (appended to output directory as YYYY-MM-DD-HHMMSS-NAME).",
 )
 @click.option(
     "--step-size",
@@ -123,10 +128,11 @@ def main(
     provider: str,
     provider_args: str | None,
     task: str | None,
-    tasks: str | None,
+    task_dir: str | None,
     criterion: str | None,
-    criteria: str | None,
+    criterion_dir: str | None,
     output_dir: str | None,
+    name: str | None,
     step_size: int,
     batch_size: int,
     prompt_update_playbook: str,
@@ -142,33 +148,33 @@ def main(
     if provider == "cli" and not provider_args:
         raise click.UsageError("--provider-args is required when provider=cli")
 
-    # Validate task/tasks options
-    if task is None and tasks is None:
-        raise click.UsageError("Either --task or --tasks must be provided")
-    if task is not None and tasks is not None:
-        raise click.UsageError("Cannot use both --task and --tasks")
+    # Validate task/task_dir options
+    if task is None and task_dir is None:
+        raise click.UsageError("Either --task or --task-dir must be provided")
+    if task is not None and task_dir is not None:
+        raise click.UsageError("Cannot use both --task and --task-dir")
 
-    # Validate criterion/criteria options
-    if criterion is None and criteria is None:
-        raise click.UsageError("Either --criterion or --criteria must be provided")
-    if criterion is not None and criteria is not None:
-        raise click.UsageError("Cannot use both --criterion and --criteria")
+    # Validate criterion/criterion_dir options
+    if criterion is None and criterion_dir is None:
+        raise click.UsageError("Either --criterion or --criterion-dir must be provided")
+    if criterion is not None and criterion_dir is not None:
+        raise click.UsageError("Cannot use both --criterion and --criterion-dir")
 
     # Load tasks
     if task is not None:
         task_list = [task]
     else:
-        task_list = load_tasks_from_glob(tasks)  # type: ignore
+        task_list = load_from_directory(task_dir)  # type: ignore
         if not task_list:
-            raise click.UsageError(f"No files matched pattern: {tasks}")
+            raise click.UsageError(f"No files found in directory: {task_dir}")
 
     # Load criteria
     if criterion is not None:
         criteria_list = [criterion]
     else:
-        criteria_list = load_criteria_from_glob(criteria)  # type: ignore
+        criteria_list = load_from_directory(criterion_dir)  # type: ignore
         if not criteria_list:
-            raise click.UsageError(f"No files matched pattern: {criteria}")
+            raise click.UsageError(f"No files found in directory: {criterion_dir}")
 
     # Validate matching counts
     if len(task_list) != len(criteria_list):
@@ -181,12 +187,16 @@ def main(
 
     # Create output directories
     if output_dir is None:
-        output_dir = f"outputs/{datetime.now().strftime('%Y-%m-%d-%H%M%S')}"
+        timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+        dir_name = f"{timestamp}-{name}" if name else timestamp
+        output_dir = f"outputs/{dir_name}"
     output_path = Path(output_dir)
     playbooks_path = output_path / "playbooks"
     generations_path = output_path / "generations"
+    inputs_path = output_path / "inputs"
     playbooks_path.mkdir(parents=True, exist_ok=True)
     generations_path.mkdir(parents=True, exist_ok=True)
+    inputs_path.mkdir(parents=True, exist_ok=True)
 
     # Load templates
     generate_template = load_template(prompt_generate_answer)
@@ -201,15 +211,19 @@ def main(
         batch_size=batch_size,
         playbooks_dir=playbooks_path,
         generations_dir=generations_path,
+        inputs_dir=inputs_path,
         generate_template=generate_template,
         update_template=update_template,
     )
 
     # Print config
     num_batches = (step_size + batch_size - 1) // batch_size
+    task_source = task_dir if task_dir else "inline"
+    criterion_source = criterion_dir if criterion_dir else "inline"
     config_text = "\n".join([
         f"provider:        {provider}" + (f" ({provider_args})" if provider_args else ""),
-        f"tasks:           {len(task_list)}",
+        f"tasks:           {len(task_list)} (from {task_source})",
+        f"criteria:        {len(criteria_list)} (from {criterion_source})",
         f"steps:           {step_size}",
         f"batch_size:      {batch_size}",
         f"num_batches:     {num_batches}",

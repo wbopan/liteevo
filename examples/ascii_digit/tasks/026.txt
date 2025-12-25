@@ -1,5 +1,3 @@
-Please recognize what number is in the following ascii art:
-
 █████   ███    ███ 
 █      █   █  █   █
 ████   █      █   █

@@ -1,17 +1,5 @@
-Navigate through this 5x5 maze from S (start) to E (end).
-Give the path as a sequence of directions: U (up), D (down), L (left), R (right).
-
-Legend:
-- S = Start position
-- E = End position
-- # = Wall (cannot pass)
-- (space) = Open path
-
-Maze:
 S ## 
  #   
      
 # #  
 ## #E
-
-What is the shortest path from S to E?
