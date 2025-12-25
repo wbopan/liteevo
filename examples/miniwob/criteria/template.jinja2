@@ -1,0 +1,7 @@
+{%- set reset_response = post_json("http://localhost:8000/reset", {"task": content.strip()}) -%}
+{%- set ground_truth_response = fetch_json("http://localhost:8000/ground-truth") -%}
+Task: {{ content.strip() }}
+
+Goal: {{ reset_response.get("goal", reset_response) }}
+
+Ground truth: {{ ground_truth_response.get("answer", "N/A") if ground_truth_response.get("available") else "N/A" }}
