@@ -1,0 +1,6 @@
+Task: {{ content.strip() }}
+
+Success: The agent achieved reward >= 1.0 and done == true from /status response.
+Failure: The agent got reward < 1.0 or did not complete the task.
+
+Look for the final /status JSON response in the agent's output to determine success.
