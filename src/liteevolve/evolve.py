@@ -196,25 +196,28 @@ def run_evolution(
             current_version = len(playbooks) - 1
             progress.update(task, status=f"task={task_idx} v{current_version}")
 
-            generation, gen_prompt = generate_with_template(
-                provider=provider,
-                template=config.generate_template,
+            # Render prompt and save before LLM call
+            gen_prompt = config.generate_template.render(
                 config=config,
                 tasks=tasks,
                 generations=all_generations,
                 criteria=criteria,
                 playbooks=playbooks,
                 step_id=step,
+                current_task=tasks[step % len(tasks)],
+                current_criterion=criteria[step % len(criteria)],
+                current_playbook=playbooks[-1],
             )
+            input_path = config.inputs_dir / f"{step:03d}_task{task_idx:03d}_v{current_version}.txt"
+            input_path.parent.mkdir(parents=True, exist_ok=True)
+            input_path.write_text(gen_prompt, encoding="utf-8")
+
+            # Call LLM
+            generation = provider.generate(gen_prompt)
 
             # Save generation output
             gen_path = config.generations_dir / f"{step:03d}_task{task_idx:03d}_v{current_version}.txt"
-            gen_path.parent.mkdir(parents=True, exist_ok=True)
             gen_path.write_text(generation, encoding="utf-8")
-
-            # Save generation prompt
-            input_path = config.inputs_dir / f"{step:03d}_task{task_idx:03d}_v{current_version}.txt"
-            input_path.write_text(gen_prompt, encoding="utf-8")
             progress.console.print(f"[dim]\\[step={step:03d}/{config.step_size:03d}, task={task_idx}, playbook=v{current_version}] → {_rel(gen_path)}[/]")
 
             all_generations.append(generation)
@@ -228,24 +231,42 @@ def run_evolution(
                 batch_size = batch_count if batch_count > 0 else config.batch_size
                 progress.console.print(f"[cyan]Updating playbook (batch {num_batches}, {batch_size} samples)...[/]")
 
-                new_playbook, full_response, update_prompt = update_playbook(
-                    provider=provider,
+                new_version = len(playbooks)
+
+                # Render update prompt and save before LLM call
+                update_prompt = config.update_template.render(
                     config=config,
                     tasks=tasks,
                     generations=all_generations,
                     criteria=criteria,
                     playbooks=playbooks,
                     step_id=step,
+                    current_task=tasks[step % len(tasks)],
+                    current_criterion=criteria[step % len(criteria)],
+                    current_playbook=playbooks[-1],
                 )
+                update_input_path = config.inputs_dir / f"playbook_v{new_version}.txt"
+                update_input_path.write_text(update_prompt, encoding="utf-8")
 
-                new_version = len(playbooks)
+                # Call LLM with retries
+                last_error = None
+                for attempt in range(config.max_retries):
+                    try:
+                        full_response = provider.generate(update_prompt)
+                        new_playbook = extract_playbook_from_response(full_response)
+                        break
+                    except (ValueError, RuntimeError) as e:
+                        last_error = e
+                        print(f"Retry {attempt + 1}/{config.max_retries}: {e}")
+                else:
+                    raise RuntimeError(
+                        f"Failed to extract playbook after {config.max_retries} attempts: {last_error}"
+                    )
+
                 playbook_path = config.playbooks_dir / f"playbook_v{new_version}.txt"
                 save_playbook(new_playbook, playbook_path)
                 update_gen_path = config.generations_dir / f"playbook_v{new_version}.txt"
                 update_gen_path.write_text(full_response, encoding="utf-8")
-                # Save update prompt
-                update_input_path = config.inputs_dir / f"playbook_v{new_version}.txt"
-                update_input_path.write_text(update_prompt, encoding="utf-8")
                 progress.console.print(f"[green]✓ {_rel(update_gen_path)}[/]")
 
 

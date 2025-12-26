@@ -1,15 +1,69 @@
 """Command-line interface for LiteEvolve."""
 
+import random
 from datetime import datetime
 from pathlib import Path
 
 import click
-from jinja2 import Template
+import requests
+from jinja2 import Environment, BaseLoader
 from rich import print
 from rich.panel import Panel
 
 from .evolve import EvolutionConfig, load_template, run_evolution
 from .provider import create_provider
+
+
+def fetch_json(url: str) -> dict:
+    """Fetch JSON from a URL (GET request).
+
+    Args:
+        url: The URL to fetch.
+
+    Returns:
+        Parsed JSON response as a dict.
+    """
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def post_json(url: str, data: dict = None) -> dict:
+    """Post JSON to a URL and return response.
+
+    Args:
+        url: The URL to post to.
+        data: Optional JSON data to send.
+
+    Returns:
+        Parsed JSON response as a dict.
+    """
+    try:
+        response = requests.post(url, json=data or {}, timeout=30)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def fetch_text(url: str) -> str:
+    """Fetch text content from a URL.
+
+    Args:
+        url: The URL to fetch.
+
+    Returns:
+        Response text content.
+    """
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        return response.text
+    except Exception as e:
+        return f"Error: {e}"
 
 
 def load_from_directory(dir_path: str) -> list[str]:
@@ -34,8 +88,12 @@ def load_from_directory(dir_path: str) -> list[str]:
     )
 
     if template_path.exists():
-        # Render template for each file
-        template = Template(template_path.read_text(encoding="utf-8"))
+        # Create Jinja2 environment with custom functions
+        env = Environment(loader=BaseLoader())
+        env.globals["fetch_json"] = fetch_json
+        env.globals["post_json"] = post_json
+        env.globals["fetch_text"] = fetch_text
+        template = env.from_string(template_path.read_text(encoding="utf-8"))
         return [
             template.render(content=f.read_text(encoding="utf-8"))
             for f in files
@@ -124,6 +182,12 @@ def load_from_directory(dir_path: str) -> list[str]:
     default="prompts/PLAYBOOK_SCHEMA.txt",
     help="Path to playbook schema file.",
 )
+@click.option(
+    "--seed",
+    type=int,
+    default=42,
+    help="Random seed for shuffling tasks (default: 42).",
+)
 def main(
     provider: str,
     provider_args: str | None,
@@ -138,6 +202,7 @@ def main(
     prompt_update_playbook: str,
     prompt_generate_answer: str,
     schema_playbook: str,
+    seed: int,
 ) -> None:
     """LiteEvolve - Self-evolution training framework for LLMs.
 
@@ -182,6 +247,13 @@ def main(
             f"Number of tasks ({len(task_list)}) must match number of criteria ({len(criteria_list)})"
         )
 
+    # Shuffle tasks and criteria together using seed
+    rng = random.Random(seed)
+    indices = list(range(len(task_list)))
+    rng.shuffle(indices)
+    task_list = [task_list[i] for i in indices]
+    criteria_list = [criteria_list[i] for i in indices]
+
     # Create provider
     llm_provider = create_provider(provider, provider_args)
 
@@ -224,6 +296,7 @@ def main(
         f"provider:        {provider}" + (f" ({provider_args})" if provider_args else ""),
         f"tasks:           {len(task_list)} (from {task_source})",
         f"criteria:        {len(criteria_list)} (from {criterion_source})",
+        f"seed:            {seed}",
         f"steps:           {step_size}",
         f"batch_size:      {batch_size}",
         f"num_batches:     {num_batches}",
