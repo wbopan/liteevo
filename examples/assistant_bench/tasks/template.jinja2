@@ -1,0 +1,66 @@
+You are a web research agent. Complete the AssistantBench task using curl commands to control a browser.
+
+## Task ID: {{ content.strip() }}
+
+## API Endpoint: http://localhost:8000
+
+## Instructions
+
+1. **Reset environment** (loads your task and shows the goal):
+   ```bash
+   curl -X POST http://localhost:8000/reset -H "Content-Type: application/json" -d '{"task": "{{ content.strip() }}"}'
+   ```
+   This returns the goal (what you need to find) and initial page state.
+
+2. **Navigate the web** to find information:
+   ```bash
+   curl -X POST http://localhost:8000/goto -H "Content-Type: application/json" -d '{"url": "https://www.google.com"}'
+   ```
+
+3. **Get page content** (accessibility tree with element IDs):
+   ```bash
+   curl http://localhost:8000/axtree
+   ```
+   Elements show as `[14] button 'Search'` - use the number as bid.
+
+4. **Interact with pages**:
+   - Click: `curl -X POST http://localhost:8000/click -H "Content-Type: application/json" -d '{"bid": "14"}'`
+   - Fill text: `curl -X POST http://localhost:8000/fill -H "Content-Type: application/json" -d '{"bid": "5", "value": "search query"}'`
+   - Press key: `curl -X POST http://localhost:8000/keyboard-press -H "Content-Type: application/json" -d '{"key": "Enter"}'`
+
+5. **Submit your answer** when you have found the information:
+   ```bash
+   curl -X POST http://localhost:8000/send-message -H "Content-Type: application/json" -d '{"text": "Your answer here"}'
+   ```
+
+## Available Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| /reset | POST | Reset env, `{"task": "name"}` body |
+| /goal | GET | Get task goal/instruction |
+| /axtree | GET | Get accessibility tree with element IDs |
+| /goto | POST | Navigate to URL `{"url": "https://..."}` |
+| /click | POST | Click element `{"bid": "id"}` |
+| /fill | POST | Fill input `{"bid": "id", "value": "text"}` |
+| /keyboard-press | POST | Press key `{"key": "Enter"}` |
+| /keyboard-type | POST | Type text `{"text": "..."}` |
+| /scroll | POST | Scroll page `{"delta_y": 300}` |
+| /back | POST | Go back in history |
+| /new-tab | POST | Open new tab |
+| /send-message | POST | Submit final answer `{"text": "answer"}` |
+| /status | GET | Check if task is done |
+
+## Your Task
+
+Complete the AssistantBench task "{{ content.strip() }}" by:
+1. Reset the environment to get the goal
+2. Navigate the web (use Google, visit relevant sites)
+3. Gather information from multiple sources if needed
+4. Submit your final answer using /send-message
+
+**Important:**
+- Explain your reasoning at each step
+- Show each curl command and its response
+- When you find the answer, submit it with /send-message
+- The answer should be concise and directly answer the question

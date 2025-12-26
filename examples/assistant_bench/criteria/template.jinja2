@@ -1,0 +1,17 @@
+{% set parts = content.strip().split('|') %}
+{% set task_id = parts[0] %}
+{% set ground_truth = parts[1] if parts|length > 1 else '' %}
+## Evaluation Criterion for Task: {{ task_id }}
+
+**Ground Truth Answer:** {{ ground_truth if ground_truth else 'Not available' }}
+
+**Success Criteria:**
+- The agent's answer (submitted via /send-message) matches or is semantically equivalent to the ground truth above
+- Numerical equivalence: "$1,250,000" = "1250000" = "1.25 million"
+- Text equivalence: Synonyms and rephrasing are acceptable if meaning is preserved
+- List answers: All key items must be present
+
+**Failure Criteria:**
+- Agent submitted incorrect information
+- Agent failed to find the answer
+- Agent did not submit an answer via /send-message

@@ -20,7 +20,7 @@ Equipped with above playbook, here are {{ actual_batch_size }} sample(s) of AI r
 {%- set task_idx = gen_idx % (tasks | length) -%}
 
 <TASK_INPUT_{{ loop.index0 }}>
-{{ tasks[task_idx] }}
+{{ tasks[task_idx].split('###DETAILED INSTRUCTION###')[0].strip() }}
 </TASK_INPUT_{{ loop.index0 }}>
 
 <AI_GENERATION_{{ loop.index0 }}>

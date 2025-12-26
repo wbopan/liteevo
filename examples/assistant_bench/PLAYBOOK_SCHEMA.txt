@@ -1,0 +1,44 @@
+{
+  "playbook_version": 0,
+  "title": "AssistantBench Web Research Strategy",
+  "description": "Guidance for completing web research tasks via curl API",
+  "sections": {
+    "workflow": [
+      "1. Reset environment to get the task goal",
+      "2. Analyze the goal to identify what information is needed",
+      "3. Start with a Google search for relevant queries",
+      "4. Navigate to promising search results",
+      "5. Extract relevant information from pages (use axtree)",
+      "6. Cross-reference information from multiple sources if needed",
+      "7. Formulate a concise answer",
+      "8. Submit answer using /send-message"
+    ],
+    "web_navigation": [
+      "Use /goto to navigate directly to URLs",
+      "Use /click with bid to follow links",
+      "Use /fill and /keyboard-press to interact with search forms",
+      "Use /scroll to see more content on long pages",
+      "Use /back to return to previous pages",
+      "Open new tabs for comparing multiple sources"
+    ],
+    "information_gathering": [
+      "Read axtree carefully - it contains all visible text",
+      "Look for specific data points mentioned in the goal",
+      "Note prices, dates, names, and other factual details",
+      "Compare information across multiple sources for accuracy"
+    ],
+    "answer_formulation": [
+      "Answer should directly address the goal question",
+      "Be concise - include only the requested information",
+      "Use appropriate format (number, name, list, etc.)",
+      "Double-check facts before submitting"
+    ],
+    "error_handling": [
+      "If a page fails to load, try an alternative source",
+      "If information is outdated, look for more recent sources",
+      "If search returns no results, try different keywords",
+      "If stuck, step back and reconsider the approach"
+    ]
+  },
+  "logs": []
+}
