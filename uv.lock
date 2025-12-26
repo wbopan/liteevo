@@ -249,6 +249,25 @@ wheels = [
 ]
 
 [[package]]
+name = "browsergym-workarena"
+version = "0.5.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "browsergym-core" },
+    { name = "english-words" },
+    { name = "faker" },
+    { name = "huggingface-hub" },
+    { name = "numpy" },
+    { name = "requests" },
+    { name = "tenacity" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/91/a2/947e3d828ae9002ef1ee2da659d5aa362094b5f477f9522e56378b303573/browsergym_workarena-0.5.1.tar.gz", hash = "sha256:110ba0631b2b37f64b070ec13f8a023a48c8846aa674cd2c8a763c6d3dcb0079", size = 6612200, upload-time = "2025-12-06T18:12:33.069Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e8/e6/845d3a94ae549ccfddf6c7e418db7426f70855231207ca035296641441f1/browsergym_workarena-0.5.1-py3-none-any.whl", hash = "sha256:91f1006a6b32b1198cf9581157b4c79cb93294ba019169f8df157a0f7b7cf018", size = 6782989, upload-time = "2025-12-06T18:12:30.975Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2025.11.12"
 source = { registry = "https://pypi.org/simple" }
@@ -501,6 +520,15 @@ wheels = [
 ]
 
 [[package]]
+name = "english-words"
+version = "2.0.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8e/95/12d90f2a3af18305b13d7c09401b59bd235db4cfb63d76ddf594748c2de8/english-words-2.0.2.tar.gz", hash = "sha256:e51d05607fe92ebf65047a2359e977c78a46aa16d1d92a3cba0bac3e34957d8e", size = 8152008, upload-time = "2025-08-14T21:56:27.884Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/90/6f/42700113073ca6775fb12a260112f0cb36449a2c2e42dcd53d3fcc6970b4/english_words-2.0.2-py3-none-any.whl", hash = "sha256:a65b900b17201526d8ab2d414f45e5a37afc714a1857377b30182c754ae6e0d6", size = 8196368, upload-time = "2025-08-14T21:56:24.865Z" },
+]
+
+[[package]]
 name = "evaluate"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -520,6 +548,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ad/d0/0c17a8e6e8dc7245f22dea860557c32bae50fc4d287ae030cb0e8ab8720f/evaluate-0.4.6.tar.gz", hash = "sha256:e07036ca12b3c24331f83ab787f21cc2dbf3631813a1631e63e40897c69a3f21", size = 65716, upload-time = "2025-09-18T13:06:30.581Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3e/af/3e990d8d4002bbc9342adb4facd59506e653da93b2417de0fa6027cb86b1/evaluate-0.4.6-py3-none-any.whl", hash = "sha256:bca85bc294f338377b7ac2f861e21c308b11b2a285f510d7d5394d5df437db29", size = 84069, upload-time = "2025-09-18T13:06:29.265Z" },
+]
+
+[[package]]
+name = "faker"
+version = "39.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tzdata" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/30/b9/0897fb5888ddda099dc0f314a8a9afb5faa7e52eaf6865c00686dfb394db/faker-39.0.0.tar.gz", hash = "sha256:ddae46d3b27e01cea7894651d687b33bcbe19a45ef044042c721ceac6d3da0ff", size = 1941757, upload-time = "2025-12-17T19:19:04.762Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/eb/5a/26cdb1b10a55ac6eb11a738cea14865fa753606c4897d7be0f5dc230df00/faker-39.0.0-py3-none-any.whl", hash = "sha256:c72f1fca8f1a24b8da10fcaa45739135a19772218ddd61b86b7ea1b8c790dce7", size = 1980775, upload-time = "2025-12-17T19:19:02.926Z" },
 ]
 
 [[package]]
@@ -968,6 +1008,7 @@ dependencies = [
     { name = "browsergym-core" },
     { name = "browsergym-miniwob" },
     { name = "browsergym-webarena" },
+    { name = "browsergym-workarena" },
     { name = "click" },
     { name = "fastapi" },
     { name = "jinja2" },
@@ -985,6 +1026,7 @@ requires-dist = [
     { name = "browsergym-core", specifier = ">=0.14.2" },
     { name = "browsergym-miniwob", specifier = ">=0.14.2" },
     { name = "browsergym-webarena", specifier = ">=0.14.2" },
+    { name = "browsergym-workarena", specifier = ">=0.5.1" },
     { name = "click", specifier = ">=8.0.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "jinja2", specifier = ">=3.1.0" },
@@ -2232,6 +2274,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ba/b8/73a0e6a6e079a9d9cfa64113d771e421640b6f679a52eeb9b32f72d871a1/starlette-0.50.0.tar.gz", hash = "sha256:a2a17b22203254bcbc2e1f926d2d55f3f9497f769416b3190768befe598fa3ca", size = 2646985, upload-time = "2025-11-01T15:25:27.516Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/52/1064f510b141bd54025f9b55105e26d1fa970b9be67ad766380a3c9b74b0/starlette-0.50.0-py3-none-any.whl", hash = "sha256:9e5391843ec9b6e472eed1365a78c8098cfceb7a74bfd4d6b1c0c0095efb3bca", size = 74033, upload-time = "2025-11-01T15:25:25.461Z" },
+]
+
+[[package]]
+name = "tenacity"
+version = "9.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/d4/2b0cd0fe285e14b36db076e78c93766ff1d529d70408bd1d2a5a84f1d929/tenacity-9.1.2.tar.gz", hash = "sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb", size = 48036, upload-time = "2025-04-02T08:25:09.966Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e5/30/643397144bfbfec6f6ef821f36f33e57d35946c44a2352d3c9f0ae847619/tenacity-9.1.2-py3-none-any.whl", hash = "sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138", size = 28248, upload-time = "2025-04-02T08:25:07.678Z" },
 ]
 
 [[package]]

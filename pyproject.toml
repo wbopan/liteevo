@@ -29,6 +29,7 @@ dependencies = [
     "uvicorn>=0.32.0",
     "browsergym-webarena>=0.14.2",
     "browsergym-assistantbench>=0.14.2",
+    "browsergym-workarena>=0.5.1",
 ]
 
 [project.urls]
