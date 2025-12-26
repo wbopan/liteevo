@@ -35,6 +35,10 @@ _last_obs: Optional[dict] = None
 _dataset_name: str = ""
 _task_name: str = ""
 _headless: bool = False
+_max_steps: Optional[int] = None
+_current_step: int = 0
+_current_loaded_task: Optional[str] = None
+_timeout: Optional[int] = None
 
 
 # ========== Pydantic Models ==========
@@ -45,6 +49,8 @@ class ActionResult(BaseModel):
     truncated: bool = Field(description="Whether the episode was truncated")
     done: bool = Field(description="Whether the episode is done (terminated or truncated)")
     action_error: Optional[str] = Field(default=None, description="Error from the action if any")
+    steps_remaining: Optional[int] = Field(default=None, description="Number of steps remaining (if max_steps is set)")
+    max_steps_reached: bool = Field(default=False, description="Whether max steps limit has been reached")
 
 
 class ErrorResponse(BaseModel):
@@ -357,24 +363,53 @@ def _check_env_initialized():
         raise HTTPException(status_code=400, detail="Environment not initialized. Call POST /reset first.")
 
 
-def _execute_action(action: str) -> dict:
-    """Execute an action and return result."""
-    global _env, _last_obs
+def _execute_action(action: str, is_interactive: bool = True) -> dict:
+    """Execute an action and return result.
+
+    Args:
+        action: The BrowserGym action string to execute
+        is_interactive: Whether this is an interactive action that counts toward max_steps
+    """
+    global _env, _last_obs, _current_step, _max_steps
     _check_env_initialized()
+
+    # Check if max steps reached (only for interactive actions)
+    if is_interactive and _max_steps is not None and _current_step >= _max_steps:
+        return {
+            "reward": 0.0,
+            "terminated": False,
+            "truncated": True,
+            "done": True,
+            "action_error": f"Maximum steps ({_max_steps}) reached. Stop and report what you've done and achieved in detail.",
+            "steps_remaining": 0,
+            "max_steps_reached": True,
+        }
 
     try:
         obs, reward, terminated, truncated, info = _env.step(action)
         _last_obs = obs
+
+        # Increment step counter for interactive actions
+        if is_interactive:
+            _current_step += 1
 
         result = {
             "reward": float(reward),
             "terminated": terminated,
             "truncated": truncated,
             "done": terminated or truncated,
+            "max_steps_reached": False,
         }
 
         if "last_action_error" in obs and obs["last_action_error"]:
             result["action_error"] = obs["last_action_error"]
+
+        # Add steps remaining if max_steps is set
+        if _max_steps is not None:
+            result["steps_remaining"] = _max_steps - _current_step
+            if result["steps_remaining"] <= 0:
+                result["max_steps_reached"] = True
+                result["done"] = True
 
         return result
     except Exception as e:
@@ -410,8 +445,9 @@ def reset_env(request: ResetRequest = None):
     """Reset the BrowserGym environment and return initial observation.
 
     Optionally accepts a task name to switch to a different task.
+    Returns an error if trying to reset to the same task that's already loaded.
     """
-    global _env, _last_obs, _dataset_name, _task_name, _headless
+    global _env, _last_obs, _dataset_name, _task_name, _headless, _current_step, _current_loaded_task
 
     try:
         # Allow dynamic task switching via request body
@@ -424,6 +460,13 @@ def reset_env(request: ResetRequest = None):
             task_id = "browsergym/openended"
         else:
             task_id = f"browsergym/{_dataset_name}.{_task_name}"
+
+        # Check if trying to reset to the same task
+        if _current_loaded_task == task_id and _env is not None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot reset to the same task '{task_id}'. Use a different task or close the environment first."
+            )
 
         if _env is not None:
             try:
@@ -450,27 +493,31 @@ def reset_env(request: ResetRequest = None):
             multiaction=True,
         )
 
+        # Build common kwargs
+        make_kwargs = {
+            "headless": _headless,
+            "action_mapping": action_set.to_python_code,
+        }
         if task_kwargs:
-            _env = gym.make(
-                task_id,
-                headless=_headless,
-                task_kwargs=task_kwargs,
-                action_mapping=action_set.to_python_code,
-            )
-        else:
-            _env = gym.make(
-                task_id,
-                headless=_headless,
-                action_mapping=action_set.to_python_code,
-            )
+            make_kwargs["task_kwargs"] = task_kwargs
+        if _timeout:
+            make_kwargs["timeout"] = _timeout
+
+        _env = gym.make(task_id, **make_kwargs)
         obs, info = _env.reset()
         _last_obs = obs
+
+        # Reset step counter and track current task
+        _current_step = 0
+        _current_loaded_task = task_id
 
         return {
             "task_id": task_id,
             "goal": obs.get("goal", "") or str(obs.get("goal_object", "")),
             "axtree": _get_axtree_text(obs),
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -478,7 +525,7 @@ def reset_env(request: ResetRequest = None):
 @app.post("/close")
 def close_env():
     """Close the BrowserGym environment and release resources."""
-    global _env, _last_obs
+    global _env, _last_obs, _current_step, _current_loaded_task
 
     if _env is None:
         return {"status": "no environment to close"}
@@ -487,6 +534,8 @@ def close_env():
         _env.close()
         _env = None
         _last_obs = None
+        _current_step = 0
+        _current_loaded_task = None
         return {"status": "closed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -923,14 +972,14 @@ def report_infeasible(request: ReportInfeasibleRequest):
 
 @app.post("/noop", response_model=ActionResult)
 def noop(request: NoopRequest):
-    """Do nothing and wait."""
-    return _execute_action(f"noop(wait_ms={request.wait_ms})")
+    """Do nothing and wait. Does not count toward max_steps."""
+    return _execute_action(f"noop(wait_ms={request.wait_ms})", is_interactive=False)
 
 
 # ========== Main ==========
 
 def main():
-    global _dataset_name, _task_name, _headless
+    global _dataset_name, _task_name, _headless, _max_steps, _timeout
 
     parser = argparse.ArgumentParser(description="BrowserGym REST API Server")
     parser.add_argument("--dataset", "-d",
@@ -948,17 +997,27 @@ def main():
     parser.add_argument("--headless", action="store_true",
                         default=os.environ.get("HEADLESS", "").lower() == "true",
                         help="Run browser in headless mode (hides browser and chat windows)")
+    parser.add_argument("--max-steps", "-m", type=int,
+                        default=int(os.environ.get("MAX_STEPS", "0")) or None,
+                        help="Maximum number of interactive steps allowed per task (0 or unset = unlimited)")
+    parser.add_argument("--timeout", type=int,
+                        default=int(os.environ.get("TIMEOUT", "0")) or None,
+                        help="Playwright timeout in milliseconds (default: 30000, use higher for slow sites)")
 
     args = parser.parse_args()
 
     _dataset_name = args.dataset
     _task_name = args.task
     _headless = args.headless
+    _max_steps = args.max_steps if args.max_steps and args.max_steps > 0 else None
+    _timeout = args.timeout if args.timeout and args.timeout > 0 else None
 
     print(f"Starting BrowserGym REST API Server", file=sys.stderr)
     print(f"  Dataset: {_dataset_name}", file=sys.stderr)
     print(f"  Task: {_task_name or '(none)'}", file=sys.stderr)
     print(f"  Headless: {_headless}", file=sys.stderr)
+    print(f"  Max Steps: {_max_steps or 'unlimited'}", file=sys.stderr)
+    print(f"  Timeout: {_timeout or 'default (30s)'}", file=sys.stderr)
     print(f"  URL: http://{args.host}:{args.port}", file=sys.stderr)
     print(f"  Docs: http://{args.host}:{args.port}/docs", file=sys.stderr)
 
