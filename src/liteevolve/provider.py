@@ -1,6 +1,7 @@
 """Provider implementations for LLM generation."""
 
 import os
+import shlex
 import subprocess
 from abc import ABC, abstractmethod
 
@@ -57,7 +58,7 @@ class ClaudeCodeProvider(Provider):
         """
         cmd = ["claude"]
         if self.args:
-            cmd.extend(self.args.split())
+            cmd.extend(shlex.split(self.args))
         cmd.extend(["-p", prompt])
         result = subprocess.run(
             cmd,
@@ -98,7 +99,7 @@ class GeminiProvider(Provider):
         """
         cmd = ["gemini"]
         if self.args:
-            cmd.extend(self.args.split())
+            cmd.extend(shlex.split(self.args))
         cmd.append(prompt)
         result = subprocess.run(
             cmd,
@@ -139,7 +140,7 @@ class CodexProvider(Provider):
         """
         cmd = ["codex", "exec"]
         if self.args:
-            cmd.extend(self.args.split())
+            cmd.extend(shlex.split(self.args))
         cmd.append(prompt)
         result = subprocess.run(
             cmd,

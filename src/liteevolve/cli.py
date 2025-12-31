@@ -66,6 +66,19 @@ def fetch_text(url: str) -> str:
         return f"Error: {e}"
 
 
+def fromjson(value: str) -> dict | list:
+    """Parse a JSON string into a Python object.
+
+    Args:
+        value: JSON string to parse.
+
+    Returns:
+        Parsed Python object (dict or list).
+    """
+    import json
+    return json.loads(value)
+
+
 def load_from_directory(dir_path: str) -> list[str]:
     """Load content from files in a directory.
 
@@ -88,11 +101,12 @@ def load_from_directory(dir_path: str) -> list[str]:
     )
 
     if template_path.exists():
-        # Create Jinja2 environment with custom functions
+        # Create Jinja2 environment with custom functions and filters
         env = Environment(loader=BaseLoader())
         env.globals["fetch_json"] = fetch_json
         env.globals["post_json"] = post_json
         env.globals["fetch_text"] = fetch_text
+        env.filters["fromjson"] = fromjson
         template = env.from_string(template_path.read_text(encoding="utf-8"))
         return [
             template.render(content=f.read_text(encoding="utf-8"))

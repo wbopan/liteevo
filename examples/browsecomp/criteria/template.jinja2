@@ -1,0 +1,13 @@
+## Evaluation Criterion
+
+**Ground Truth Answer:** {{ content.strip() }}
+
+**Success Criteria:**
+- The agent's answer matches or is semantically equivalent to the ground truth
+- Numerical equivalence is acceptable (e.g., "1,000" = "1000")
+- Minor formatting differences are acceptable if meaning is preserved
+
+**Failure Criteria:**
+- Agent provided incorrect information
+- Agent failed to find an answer
+- Agent's answer contradicts the ground truth

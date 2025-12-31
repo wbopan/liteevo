@@ -1,0 +1,34 @@
+{
+  "playbook_version": 0,
+  "title": "BrowseComp Web Browsing Strategy",
+  "description": "Guidance for answering questions that require web browsing",
+  "sections": {
+    "workflow": [
+      "1. Read the question carefully to understand what information is needed",
+      "2. Identify key terms and entities to search for",
+      "3. Start with a web search using relevant keywords",
+      "4. Navigate to authoritative sources (official sites, Wikipedia, etc.)",
+      "5. Extract relevant facts and verify across sources if needed",
+      "6. Formulate a clear, concise answer"
+    ],
+    "search_strategies": [
+      "Use specific keywords from the question",
+      "Include entity names, dates, or numbers when relevant",
+      "Try alternative phrasings if initial search fails",
+      "Look for official sources first (company sites, government, etc.)"
+    ],
+    "information_extraction": [
+      "Focus on factual information that directly answers the question",
+      "Note specific numbers, dates, names as they appear",
+      "Cross-reference if information seems uncertain",
+      "Prefer recent sources for time-sensitive information"
+    ],
+    "answer_formulation": [
+      "Answer the question directly and concisely",
+      "Include only information that was requested",
+      "Use the same format as the question implies (number, name, list, etc.)",
+      "Double-check the answer against the original question"
+    ]
+  },
+  "logs": []
+}

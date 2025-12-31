@@ -1,0 +1,29 @@
+You are solving an ARC (Abstraction and Reasoning Corpus) challenge.
+
+## Task Format
+- Grids are 2D arrays of integers 0-9, where each integer represents a color
+- Colors: 0=black, 1=blue, 2=red, 3=green, 4=yellow, 5=gray, 6=magenta, 7=orange, 8=cyan, 9=brown
+- You will see training examples showing input-to-output transformations
+- Your goal: identify the transformation pattern and predict the output for the test input
+
+## Training Examples
+{% set task_data = content | fromjson %}
+{% for example in task_data.train %}
+### Example {{ loop.index }}
+Input:
+{{ example.input | tojson(indent=None) }}
+
+Output:
+{{ example.output | tojson(indent=None) }}
+
+{% endfor %}
+## Test Input
+{{ task_data.test.input | tojson(indent=None) }}
+
+## Instructions
+1. Carefully analyze ALL training examples to identify the transformation pattern
+2. Consider: What changes between input and output? Are there objects, colors, shapes, symmetry, counting, or spatial relationships?
+3. Apply the SAME pattern to the test input
+4. Output ONLY the predicted grid as a JSON array (no explanation)
+
+Your answer (JSON array only):

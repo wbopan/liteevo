@@ -12,3 +12,10 @@ wheels/
 # Output directories
 outputs/
 .DS_Store
+
+# ARC-AGI-2 dataset (cloned separately)
+examples/arc-agi-2/data/
+examples/arc-agi-2/tasks/*.txt
+examples/arc-agi-2/criteria/*.txt
+examples/arc-agi-2-simple/tasks/*.txt
+examples/arc-agi-2-simple/criteria/*.txt
